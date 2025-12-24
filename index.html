@@ -322,7 +322,7 @@
     ];
 
     // ===========================
-    // 计时器逻辑
+    // 计时器逻辑 (优化版：支持后台运行)
     // ===========================
     function timeToString(time) {
       let diffInHrs = time / 3600000;
@@ -334,9 +334,13 @@
       return `${hh.toString().padStart(2, "0")}:${mm.toString().padStart(2, "0")}:${ss.toString().padStart(2, "0")}`;
     }
 
-    function updateTimerDisplay() {
-        elapsedTime = Date.now() - startTime;
-        document.getElementById("display").innerHTML = timeToString(elapsedTime);
+    function tick() {
+        const now = Date.now();
+        const start = parseInt(localStorage.getItem('timer_start_timestamp') || now);
+        const accumulated = parseInt(localStorage.getItem('timer_accumulated_before_start') || 0);
+        
+        elapsedTime = (now - start) + accumulated;
+        document.querySelector(".timer-display").innerHTML = timeToString(elapsedTime);
     }
 
     function setFocusMode(enable) {
@@ -352,6 +356,9 @@
             statusText.textContent = "正在心流模式中，保持专注...";
             statusText.style.opacity = 1;
             startBtn.classList.add("hidden", "flex");
+            startBtn.classList.remove("flex"); // 确保移除 flex
+            startBtn.style.display = 'none'; // 强制隐藏
+            
             pauseBtn.classList.remove("hidden");
             pauseBtn.classList.add("flex");
             resetBtn.classList.remove("hidden");
@@ -360,24 +367,38 @@
             body.classList.remove("focus-mode");
             statusText.style.opacity = 0;
             startBtn.classList.remove("hidden");
+            startBtn.style.display = ''; // 恢复显示
+            
             pauseBtn.classList.add("hidden");
+            pauseBtn.classList.remove("flex");
             resetBtn.classList.add("hidden");
+            resetBtn.classList.remove("flex");
         }
     }
 
     function startTimer() {
-        if (isStudying) return; // 防止重复点击
-        startTime = Date.now() - elapsedTime;
-        timerInterval = setInterval(() => {
-            elapsedTime = Date.now() - startTime;
-            document.querySelector(".timer-display").innerHTML = timeToString(elapsedTime);
-        }, 1000);
+        if (isStudying) return;
+        
+        // 记录开始时间戳到本地存储，实现后台计时
+        const now = Date.now();
+        localStorage.setItem('timer_start_timestamp', now);
+        localStorage.setItem('timer_accumulated_before_start', elapsedTime);
+        localStorage.setItem('timer_is_running', 'true');
+
+        isStudying = true;
+        tick(); // 立即更新一次
+        timerInterval = setInterval(tick, 1000);
         setFocusMode(true);
     }
 
     function pauseTimer() {
         clearInterval(timerInterval);
         isStudying = false;
+        
+        // 清除运行状态，但保留 elapsedTime
+        localStorage.removeItem('timer_is_running');
+        // 此时 elapsedTime 已经在 tick() 中更新到了最新
+        
         setFocusMode(false);
         document.getElementById("timerStatus").textContent = "已暂停";
         document.getElementById("timerStatus").style.opacity = 1;
@@ -386,8 +407,16 @@
     // 停止计时并检查是否触发奖励
     function stopTimerWithRewardCheck() {
         clearInterval(timerInterval);
+        
+        // 强制更新一次时间，确保准确
+        tick();
         const finalTime = elapsedTime;
         
+        // 清理所有计时器相关的本地存储
+        localStorage.removeItem('timer_start_timestamp');
+        localStorage.removeItem('timer_accumulated_before_start');
+        localStorage.removeItem('timer_is_running');
+
         // 计算专注时长（分钟）和积分
         const minutes = Math.floor(finalTime / 60000);
         if (minutes > 0) {
@@ -406,6 +435,23 @@
             showRewardModal();
         }
     }
+
+    // 页面可见性变化监听：当用户切回微信时，立即刷新时间
+    document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'visible' && isStudying) {
+            tick();
+        }
+    });
+
+    // 页面加载时恢复计时状态（如果意外关闭或刷新）
+    window.addEventListener('load', () => {
+        if (localStorage.getItem('timer_is_running') === 'true') {
+            isStudying = true;
+            setFocusMode(true);
+            tick();
+            timerInterval = setInterval(tick, 1000);
+        }
+    });
 
     // ===========================
     // 奖励盒子逻辑 (改编自情绪盒子)
@@ -688,6 +734,89 @@
         saveData();
         renderCalendar(); // Update dots
         alert('记录已保存 📝');
+    }
+
+    // ===========================
+    // 计划清单逻辑
+    // ===========================
+    const todoInput = document.getElementById("todoInput");
+    const todoList = document.getElementById("todoList");
+    
+    // 初始化渲染清单
+    renderTodos();
+
+    // 监听回车键添加
+    if (todoInput) {
+        todoInput.addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                addTodo();
+            }
+        });
+    }
+
+    function renderTodos() {
+        todoList.innerHTML = '';
+        // 兼容旧数据
+        if (!appData.todos) appData.todos = [];
+        
+        appData.todos.forEach((todo, index) => {
+            const li = document.createElement("li");
+            const isCompleted = todo.completed;
+            
+            li.className = `todo-item group flex justify-between items-center p-4 rounded-xl border-2 shadow-sm hover:shadow-md transition-all animate-[fadeIn_0.3s_ease-out] ${isCompleted ? 'completed bg-primary-light/10 border-primary/20' : 'bg-white/80 backdrop-blur-sm border-gray-100'}`;
+            
+            li.innerHTML = `
+                <span class="flex items-center gap-3 text-gray-700 font-medium cursor-pointer flex-1" onclick="toggleComplete(${index})">
+                  <i class="fa ${isCompleted ? 'fa-check-circle text-primary' : 'fa-circle-thin text-primary-light'} text-2xl transition-all check-icon"></i>
+                  <span class="task-text transition-all border-b-2 ${isCompleted ? 'line-through text-primary/60 border-primary/30' : 'border-transparent'}">${todo.text}</span>
+                </span>
+                <button class="text-gray-300 hover:text-red-400 hover:bg-red-50 p-2 rounded-full transition-all opacity-0 group-hover:opacity-100" onclick="deleteTodo(${index})"><i class="fa fa-trash-o text-lg"></i></button>
+            `;
+            todoList.appendChild(li);
+        });
+    }
+
+    function addTodo() {
+        const text = todoInput.value.trim();
+        if (text === "") return;
+
+        // 兼容旧数据
+        if (!appData.todos) appData.todos = [];
+
+        appData.todos.unshift({ text: text, completed: false }); // 新任务加到最前面
+        saveData();
+        renderTodos();
+        todoInput.value = "";
+    }
+
+    function toggleComplete(index) {
+        const todo = appData.todos[index];
+        todo.completed = !todo.completed;
+        
+        // 奖励积分逻辑
+        if (todo.completed) {
+            appData.points += 50; // 完成任务奖励 50 分
+            // 简单的积分增加提示动画（可选，这里直接用 alert 或更新 UI）
+            updateDashboard();
+        } else {
+            appData.points -= 50; // 取消完成扣回积分
+            if (appData.points < 0) appData.points = 0;
+            updateDashboard();
+        }
+        
+        saveData();
+        renderTodos();
+    }
+
+    function deleteTodo(index) {
+        if(confirm('确定要删除这个任务吗？')) {
+            // 如果删除的是已完成的任务，要不要扣分？通常为了简单不扣，或者看你需求。
+            // 这里暂不扣分，当作是清理列表。
+            appData.todos.splice(index, 1);
+            saveData();
+            renderTodos();
+        }
     }
   </script>
 
