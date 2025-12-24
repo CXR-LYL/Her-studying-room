@@ -99,7 +99,15 @@
       /* 强调计时器 */
       body.focus-mode .timer-display {
         text-shadow: 0 0 20px rgba(110, 231, 183, 0.5);
-        @apply text-primary-light scale-110 transition-transform;
+        @apply text-primary-light scale-105 transition-transform; /* 减小缩放比例防止遮挡 */
+      }
+      
+      /* 响应式字体调整 */
+      .timer-display {
+        font-variant-numeric: tabular-nums;
+      }
+      @media (max-width: 640px) {
+        .timer-display { font-size: 3.5rem !important; }
       }
       
       /* 隐藏非必要元素 */
@@ -121,6 +129,26 @@
       <h1 class="text-3xl sm:text-4xl font-bold text-primary-dark font-serif mb-3">Today's Growth 🌱</h1>
       <p class="text-gray-600 font-serif italic">“宝宝加油哇🥹🥹🥹最棒的璐璐”</p>
     </header>
+
+    <!-- 状态仪表盘 -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8 relative z-10 hide-on-focus">
+      <div class="bg-white/60 backdrop-blur-sm p-4 rounded-2xl border border-white/50 shadow-sm flex flex-col items-center">
+        <span class="text-gray-500 text-xs font-bold uppercase tracking-wider">今日专注</span>
+        <span class="text-2xl font-bold text-primary-dark" id="todayTimeDisplay">0m</span>
+      </div>
+      <div class="bg-white/60 backdrop-blur-sm p-4 rounded-2xl border border-white/50 shadow-sm flex flex-col items-center">
+        <span class="text-gray-500 text-xs font-bold uppercase tracking-wider">当前积分</span>
+        <span class="text-2xl font-bold text-secondary" id="pointsDisplay">0</span>
+      </div>
+      <button onclick="openShop()" class="bg-white/60 hover:bg-white/80 backdrop-blur-sm p-4 rounded-2xl border border-white/50 shadow-sm flex flex-col items-center transition-all group cursor-pointer">
+        <span class="text-gray-500 text-xs font-bold uppercase tracking-wider group-hover:text-primary">积分商城</span>
+        <i class="fa fa-gift text-2xl text-gray-400 group-hover:text-primary transition-colors mt-1"></i>
+      </button>
+      <button onclick="openCalendar()" class="bg-white/60 hover:bg-white/80 backdrop-blur-sm p-4 rounded-2xl border border-white/50 shadow-sm flex flex-col items-center transition-all group cursor-pointer">
+        <span class="text-gray-500 text-xs font-bold uppercase tracking-wider group-hover:text-primary">成长日历</span>
+        <i class="fa fa-calendar text-2xl text-gray-400 group-hover:text-primary transition-colors mt-1"></i>
+      </button>
+    </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 relative z-10">
       
@@ -188,6 +216,86 @@
       <button onclick="closeRewardModal()" class="mt-10 bg-white text-primary-dark px-8 py-3 rounded-full font-bold shadow-lg hover:bg-gray-100 hover:scale-105 transition-all active:scale-95">
         收下能量，继续前行
       </button>
+    </div>
+  </div>
+
+  <!-- 积分商城模态框 -->
+  <div id="shopModal" class="fixed inset-0 z-50 flex items-center justify-center pointer-events-none opacity-0 transition-all duration-300">
+    <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeShop()"></div>
+    <div class="relative z-10 bg-white w-full max-w-2xl mx-4 rounded-3xl shadow-2xl p-6 sm:p-8 scale-95 transition-all duration-300 max-h-[85vh] overflow-y-auto custom-scrollbar" id="shopContent">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2"><i class="fa fa-gift text-secondary"></i> 积分商城</h2>
+        <button onclick="closeShop()" class="text-gray-400 hover:text-gray-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"><i class="fa fa-times"></i></button>
+      </div>
+      
+      <div class="bg-secondary-light/20 p-4 rounded-xl mb-6 flex justify-between items-center">
+        <span class="text-gray-700 font-medium">当前可用积分</span>
+        <span class="text-2xl font-bold text-secondary-dark" id="shopPointsDisplay">0</span>
+      </div>
+
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-4" id="shopItems">
+        <!-- 商品列表将通过 JS 生成 -->
+      </div>
+    </div>
+  </div>
+
+  <!-- 成长日历模态框 -->
+  <div id="calendarModal" class="fixed inset-0 z-50 flex items-center justify-center pointer-events-none opacity-0 transition-all duration-300">
+    <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeCalendar()"></div>
+    <div class="relative z-10 bg-white w-full max-w-4xl mx-4 rounded-3xl shadow-2xl p-6 sm:p-8 scale-95 transition-all duration-300 max-h-[90vh] overflow-y-auto custom-scrollbar" id="calendarContent">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2"><i class="fa fa-calendar text-primary"></i> 成长日历</h2>
+        <button onclick="closeCalendar()" class="text-gray-400 hover:text-gray-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"><i class="fa fa-times"></i></button>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- 左侧日历网格 -->
+        <div class="lg:col-span-2">
+          <div class="flex justify-between items-center mb-4">
+            <button onclick="changeMonth(-1)" class="p-2 hover:bg-gray-100 rounded-full"><i class="fa fa-chevron-left text-gray-500"></i></button>
+            <h3 class="text-lg font-bold text-gray-800" id="calendarMonthYear">2023年 10月</h3>
+            <button onclick="changeMonth(1)" class="p-2 hover:bg-gray-100 rounded-full"><i class="fa fa-chevron-right text-gray-500"></i></button>
+          </div>
+          <div class="grid grid-cols-7 gap-2 text-center mb-2">
+            <div class="text-gray-400 text-sm py-2">日</div>
+            <div class="text-gray-400 text-sm py-2">一</div>
+            <div class="text-gray-400 text-sm py-2">二</div>
+            <div class="text-gray-400 text-sm py-2">三</div>
+            <div class="text-gray-400 text-sm py-2">四</div>
+            <div class="text-gray-400 text-sm py-2">五</div>
+            <div class="text-gray-400 text-sm py-2">六</div>
+          </div>
+          <div class="grid grid-cols-7 gap-2" id="calendarGrid">
+            <!-- 日历格子 JS 生成 -->
+          </div>
+        </div>
+
+        <!-- 右侧日记编辑区 -->
+        <div class="bg-gray-50 rounded-2xl p-6 border border-gray-100">
+          <div class="text-center mb-4">
+            <span class="text-sm text-gray-500 uppercase tracking-wider">Selected Date</span>
+            <h3 class="text-xl font-bold text-primary-dark mt-1" id="selectedDateDisplay">--</h3>
+          </div>
+          
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-2">今日状态</label>
+            <div class="flex justify-between bg-white p-2 rounded-xl border border-gray-200" id="moodSelector">
+              <button onclick="selectMood('happy')" class="mood-btn p-2 rounded-lg hover:bg-yellow-50 transition-colors text-2xl" data-mood="happy">😄</button>
+              <button onclick="selectMood('calm')" class="mood-btn p-2 rounded-lg hover:bg-green-50 transition-colors text-2xl" data-mood="calm">😌</button>
+              <button onclick="selectMood('tired')" class="mood-btn p-2 rounded-lg hover:bg-blue-50 transition-colors text-2xl" data-mood="tired">😫</button>
+              <button onclick="selectMood('sad')" class="mood-btn p-2 rounded-lg hover:bg-gray-100 transition-colors text-2xl" data-mood="sad">😢</button>
+              <button onclick="selectMood('fire')" class="mood-btn p-2 rounded-lg hover:bg-red-50 transition-colors text-2xl" data-mood="fire">🔥</button>
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-2">写给自己的话</label>
+            <textarea id="dailyNote" rows="6" class="w-full p-3 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none resize-none text-sm bg-white" placeholder="记录今天的小确幸..."></textarea>
+          </div>
+
+          <button onclick="saveDailyLog()" class="w-full bg-primary hover:bg-primary-dark text-white py-3 rounded-xl font-bold shadow-md transition-all active:scale-95">保存记录</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -280,6 +388,14 @@
         clearInterval(timerInterval);
         const finalTime = elapsedTime;
         
+        // 计算专注时长（分钟）和积分
+        const minutes = Math.floor(finalTime / 60000);
+        if (minutes > 0) {
+            appData.todayStudyTime += minutes;
+            appData.points += minutes; // 1分钟 = 1积分
+            saveData();
+        }
+
         // 重置计时器状态
         document.querySelector(".timer-display").innerHTML = "00:00:00";
         elapsedTime = 0;
@@ -340,68 +456,238 @@
     }
 
     // ===========================
-    // 计划清单逻辑
+    // 数据持久化与状态管理
     // ===========================
-    const todoInput = document.getElementById("todoInput");
-    
-    // 监听回车键添加
-    todoInput.addEventListener("keypress", function(event) {
-      if (event.key === "Enter") {
-        event.preventDefault();
-        addTodo();
-      }
-    });
+    const STORAGE_KEY = 'study_space_data';
+    let appData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {
+        points: 0,
+        todayStudyTime: 0, // minutes
+        lastStudyDate: new Date().toDateString(),
+        dailyLogs: {} // format: "YYYY-MM-DD": { mood: 'happy', note: '...' }
+    };
 
-    function addTodo() {
-        const text = todoInput.value.trim();
-        if (text === "") return;
-
-        const li = document.createElement("li");
-        li.className = "todo-item group flex justify-between items-center bg-white/80 backdrop-blur-sm p-4 rounded-xl border-2 border-gray-100 shadow-sm hover:shadow-md transition-all animate-[fadeIn_0.3s_ease-out]";
-        li.innerHTML = `
-            <span class="flex items-center gap-3 text-gray-700 font-medium cursor-pointer flex-1" onclick="toggleComplete(this)">
-              <i class="fa fa-circle-thin text-primary-light text-2xl transition-all check-icon"></i>
-              <span class="task-text transition-all border-b-2 border-transparent">${text}</span>
-            </span>
-            <button class="text-gray-300 hover:text-red-400 hover:bg-red-50 p-2 rounded-full transition-all opacity-0 group-hover:opacity-100" onclick="deleteTodo(this)"><i class="fa fa-trash-o text-lg"></i></button>
-        `;
-        document.getElementById("todoList").prepend(li); // 新任务加到最前面
-        todoInput.value = "";
+    // 兼容旧数据：确保 dailyLogs 存在
+    if (!appData.dailyLogs) {
+        appData.dailyLogs = {};
     }
 
-    function toggleComplete(spanElement) {
-        const li = spanElement.parentElement;
-        const icon = spanElement.querySelector('.check-icon');
-        const textSpan = spanElement.querySelector('.task-text');
+    // 检查是否跨天，重置今日数据
+    if (appData.lastStudyDate !== new Date().toDateString()) {
+        appData.todayStudyTime = 0;
+        appData.lastStudyDate = new Date().toDateString();
+        saveData();
+    }
 
-        if (li.classList.contains('completed')) {
-            // 未完成状态
-            li.classList.remove('completed', 'bg-primary-light/10', 'border-primary/20');
-            li.classList.add('bg-white/80', 'border-gray-100');
-            icon.classList.remove('fa-check-circle', 'text-primary');
-            icon.classList.add('fa-circle-thin', 'text-primary-light');
-            textSpan.classList.remove('line-through', 'text-primary/60', 'border-primary/30');
-            textSpan.classList.add('text-gray-700', 'border-transparent');
+    function saveData() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+        updateDashboard();
+    }
+
+    function updateDashboard() {
+        document.getElementById('pointsDisplay').textContent = appData.points;
+        document.getElementById('shopPointsDisplay').textContent = appData.points;
+        document.getElementById('todayTimeDisplay').textContent = appData.todayStudyTime + 'm';
+    }
+
+    // 初始化显示
+    updateDashboard();
+
+    // ===========================
+    // 积分商城逻辑
+    // ===========================
+    const shopItems = [
+        { id: 1, name: '一杯奶茶 🧋', cost: 800, icon: '🧋' },
+        { id: 2, name: '一包薯片 🥔', cost: 500, icon: '🥔' },
+        { id: 3, name: '一顿大餐 🍲', cost: 2500, icon: '🍲' },
+        { id: 4, name: '看场电影 🎬', cost: 1500, icon: '🎬' },
+        { id: 5, name: '睡个懒觉 🛌', cost: 1000, icon: '�' },
+    ];
+
+    function openShop() {
+        const modal = document.getElementById('shopModal');
+        const content = document.getElementById('shopContent');
+        modal.classList.remove('pointer-events-none', 'opacity-0');
+        content.classList.remove('scale-95');
+        renderShopItems();
+    }
+
+    function closeShop() {
+        const modal = document.getElementById('shopModal');
+        const content = document.getElementById('shopContent');
+        modal.classList.add('pointer-events-none', 'opacity-0');
+        content.classList.add('scale-95');
+    }
+
+    function renderShopItems() {
+        const container = document.getElementById('shopItems');
+        container.innerHTML = shopItems.map(item => `
+            <div class="bg-white border border-gray-100 rounded-xl p-4 flex flex-col items-center hover:shadow-md transition-all group">
+                <div class="text-4xl mb-2 group-hover:scale-110 transition-transform">${item.icon}</div>
+                <h3 class="font-bold text-gray-800 mb-1">${item.name}</h3>
+                <div class="text-secondary font-bold mb-3">${item.cost} 积分</div>
+                <button onclick="redeemItem(${item.id})" class="w-full py-2 rounded-lg text-sm font-bold transition-colors ${appData.points >= item.cost ? 'bg-primary text-white hover:bg-primary-dark' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}">
+                    兑换
+                </button>
+            </div>
+        `).join('');
+    }
+
+    function redeemItem(id) {
+        const item = shopItems.find(i => i.id === id);
+        if (appData.points >= item.cost) {
+            if(confirm(`确定要消耗 ${item.cost} 积分兑换 "${item.name}" 吗？`)) {
+                appData.points -= item.cost;
+                saveData();
+                renderShopItems(); // 重新渲染以更新按钮状态
+                alert(`兑换成功！快去享受你的 ${item.name} 吧！🎉`);
+            }
         } else {
-            // 完成状态
-            li.classList.add('completed', 'bg-primary-light/10', 'border-primary/20');
-            li.classList.remove('bg-white/80', 'border-gray-100');
-            icon.classList.remove('fa-circle-thin', 'text-primary-light');
-            icon.classList.add('fa-check-circle', 'text-primary');
-            textSpan.classList.add('line-through', 'text-primary/60', 'border-primary/30');
-            textSpan.classList.remove('text-gray-700', 'border-transparent');
-            // 完成时的小动画
-            icon.classList.add('animate-[bounce_0.5s]');
-            setTimeout(() => icon.classList.remove('animate-[bounce_0.5s]'), 500);
+            alert('积分不足，继续加油专注吧！💪');
         }
     }
 
-    function deleteTodo(btnElement) {
-        const li = btnElement.parentElement;
-        li.classList.add('opacity-0', 'translate-x-full'); // 移除动画
-        setTimeout(() => {
-            li.remove();
-        }, 300);
+    // ===========================
+    // 成长日历逻辑
+    // ===========================
+    // 辅助函数：获取本地日期字符串 YYYY-MM-DD
+    function getLocalDateString(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    let currentCalendarDate = new Date();
+    let selectedDateStr = getLocalDateString(new Date());
+
+    function openCalendar() {
+        const modal = document.getElementById('calendarModal');
+        const content = document.getElementById('calendarContent');
+        modal.classList.remove('pointer-events-none', 'opacity-0');
+        content.classList.remove('scale-95');
+        renderCalendar();
+        loadDailyLog(selectedDateStr);
+    }
+
+    function closeCalendar() {
+        const modal = document.getElementById('calendarModal');
+        const content = document.getElementById('calendarContent');
+        modal.classList.add('pointer-events-none', 'opacity-0');
+        content.classList.add('scale-95');
+    }
+
+    function changeMonth(offset) {
+        currentCalendarDate.setMonth(currentCalendarDate.getMonth() + offset);
+        renderCalendar();
+    }
+
+    function renderCalendar() {
+        const year = currentCalendarDate.getFullYear();
+        const month = currentCalendarDate.getMonth();
+        
+        document.getElementById('calendarMonthYear').textContent = `${year}年 ${month + 1}月`;
+        
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+        const daysInMonth = lastDay.getDate();
+        const startingDay = firstDay.getDay(); // 0 is Sunday
+        
+        const grid = document.getElementById('calendarGrid');
+        grid.innerHTML = '';
+
+        // Empty slots for days before start of month
+        for (let i = 0; i < startingDay; i++) {
+            grid.innerHTML += `<div></div>`;
+        }
+
+        // Days
+        for (let day = 1; day <= daysInMonth; day++) {
+            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            const hasLog = appData.dailyLogs[dateStr];
+            const isSelected = dateStr === selectedDateStr;
+            const isToday = dateStr === getLocalDateString(new Date());
+            
+            let bgClass = 'hover:bg-gray-50 bg-white';
+            if (isSelected) bgClass = 'bg-primary text-white hover:bg-primary';
+            else if (isToday) bgClass = 'border-2 border-primary text-primary font-bold';
+            
+            // Mood indicator dot
+            let moodDot = '';
+            if (hasLog && hasLog.mood) {
+                const moodColors = { happy: 'bg-yellow-400', calm: 'bg-green-400', tired: 'bg-blue-400', sad: 'bg-gray-400', fire: 'bg-red-500' };
+                moodDot = `<div class="absolute bottom-1 right-1 w-1.5 h-1.5 rounded-full ${moodColors[hasLog.mood] || 'bg-gray-300'}"></div>`;
+            }
+
+            grid.innerHTML += `
+                <div onclick="selectDate('${dateStr}')" class="relative h-10 w-10 sm:h-12 sm:w-12 flex items-center justify-center rounded-xl cursor-pointer transition-all text-sm ${bgClass}">
+                    ${day}
+                    ${moodDot}
+                </div>
+            `;
+        }
+    }
+
+    function selectDate(dateStr) {
+        selectedDateStr = dateStr;
+        renderCalendar(); // Re-render to update selection style
+        loadDailyLog(dateStr);
+    }
+
+    let currentMood = null;
+
+    function loadDailyLog(dateStr) {
+        document.getElementById('selectedDateDisplay').textContent = dateStr;
+        // 确保 dailyLogs 存在
+        if (!appData.dailyLogs) appData.dailyLogs = {};
+        
+        const log = appData.dailyLogs[dateStr] || { mood: null, note: '' };
+        
+        // Reset mood buttons
+        document.querySelectorAll('.mood-btn').forEach(btn => {
+            btn.classList.remove('bg-gray-200', 'scale-110', 'ring-2', 'ring-primary', 'bg-primary/10');
+        });
+        
+        // Set mood if exists
+        if (log.mood) {
+            const btn = document.querySelector(`.mood-btn[data-mood="${log.mood}"]`);
+            if (btn) btn.classList.add('scale-110', 'ring-2', 'ring-primary', 'bg-primary/10');
+        }
+        currentMood = log.mood;
+
+        // Set note
+        document.getElementById('dailyNote').value = log.note;
+    }
+
+    function selectMood(mood) {
+        currentMood = mood;
+        document.querySelectorAll('.mood-btn').forEach(btn => {
+            btn.classList.remove('scale-110', 'ring-2', 'ring-primary', 'bg-primary/10');
+        });
+        const btn = document.querySelector(`.mood-btn[data-mood="${mood}"]`);
+        if (btn) btn.classList.add('scale-110', 'ring-2', 'ring-primary', 'bg-primary/10');
+    }
+
+    function saveDailyLog() {
+        // 防御性检查：确保 dailyLogs 对象存在
+        if (!appData.dailyLogs) {
+            appData.dailyLogs = {};
+        }
+
+        const note = document.getElementById('dailyNote').value;
+        
+        // 如果没有选择心情且没有写日记，提示用户
+        if (!currentMood && !note.trim()) {
+            alert('请先选择一个心情或写点什么吧~ 🤔');
+            return;
+        }
+
+        appData.dailyLogs[selectedDateStr] = {
+            mood: currentMood,
+            note: note
+        };
+        saveData();
+        renderCalendar(); // Update dots
+        alert('记录已保存 📝');
     }
   </script>
 
