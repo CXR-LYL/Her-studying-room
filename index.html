@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>她的专属自习空间</title>
+  <title>璐璐的自习室</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:ital,wght@0,500;1,400&display=swap" rel="stylesheet">
@@ -126,7 +126,7 @@
     <div class="absolute -bottom-20 -left-20 w-80 h-80 bg-secondary-light/30 rounded-full blur-3xl transition-opacity duration-700 hide-on-focus"></div>
 
     <header class="text-center mb-10 relative z-10 hide-on-focus">
-      <h1 class="text-3xl sm:text-4xl font-bold text-primary-dark font-serif mb-3">Today's Growth 🌱</h1>
+      <h1 class="text-3xl sm:text-4xl font-bold text-primary-dark font-serif mb-3">Today's study🌱</h1>
       <p class="text-gray-600 font-serif italic">“宝宝加油哇🥹🥹🥹最棒的璐璐”</p>
     </header>
 
@@ -176,12 +176,12 @@
           <span class="mr-2 text-2xl">📝</span> 今日计划清单
         </h3>
         
-        <div class="flex gap-3 mb-6">
+        <form id="todoForm" class="flex gap-3 mb-6" action="javascript:void(0);">
           <input type="text" id="todoInput" placeholder="写下接下来的小目标..." class="flex-1 p-4 rounded-xl border-2 border-gray-100 focus:border-primary/50 focus:ring-4 focus:ring-primary/10 outline-none transition-all bg-white/80 backdrop-blur-sm font-medium text-gray-700 placeholder-gray-400">
-          <button onclick="addTodo()" class="bg-primary hover:bg-primary-dark text-white p-4 rounded-xl transition-colors shadow-md active:scale-95">
+          <button type="submit" class="bg-primary hover:bg-primary-dark text-white p-4 rounded-xl transition-colors shadow-md active:scale-95">
             <i class="fa fa-plus text-lg"></i>
           </button>
-        </div>
+        </form>
 
         <ul id="todoList" class="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
           </ul>
@@ -741,17 +741,16 @@
     // ===========================
     const todoInput = document.getElementById("todoInput");
     const todoList = document.getElementById("todoList");
+    const todoForm = document.getElementById("todoForm");
     
     // 初始化渲染清单
     renderTodos();
 
-    // 监听回车键添加
-    if (todoInput) {
-        todoInput.addEventListener("keypress", function(event) {
-            if (event.key === "Enter") {
-                event.preventDefault();
-                addTodo();
-            }
+    // 监听表单提交（兼容移动端软键盘回车）
+    if (todoForm) {
+        todoForm.addEventListener("submit", function(event) {
+            event.preventDefault();
+            addTodo();
         });
     }
 
