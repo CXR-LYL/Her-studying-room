@@ -142,41 +142,26 @@
       }
 
       /* 积雪堆积效果 - 更加真实且可见 */
-      .snow-capped {
-        position: relative !important;
+      .snow-capped { position: relative !important; }
+      
+      .snow-capped::before, .snow-capped::after {
+        content: ''; position: absolute;
+        background: linear-gradient(180deg, #ffffff 0%, #e2e8f0 100%);
+        border-bottom: 1px solid #94a3b8;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2), inset 0 2px 4px rgba(255,255,255,0.8);
+        pointer-events: none;
       }
-      /* 左边的雪堆 */
+      
       .snow-capped::before {
-        content: '';
-        position: absolute;
-        top: -12px;
-        left: -2px;
-        width: 65%;
-        height: 22px;
-        /* 使用微渐变代替纯白，增加立体感 */
-        background: linear-gradient(180deg, #ffffff 0%, #e2e8f0 100%);
-        /* 添加底部描边，让积雪边缘清晰可见 */
-        border-bottom: 1px solid #94a3b8;
+        top: -12px; left: -2px; width: 65%; height: 22px;
         border-radius: 60% 40% 30% 20% / 100% 80% 40% 20%;
-        /* 增强阴影，使其从背景中浮起来 */
-        box-shadow: 0 4px 8px rgba(0,0,0,0.2), inset 0 2px 4px rgba(255,255,255,0.8);
-        z-index: 20;
-        pointer-events: none;
+        z-index: 10;
       }
-      /* 右边的雪堆 */
+      
       .snow-capped::after {
-        content: '';
-        position: absolute;
-        top: -10px;
-        right: -2px;
-        width: 55%;
-        height: 20px;
-        background: linear-gradient(180deg, #ffffff 0%, #e2e8f0 100%);
-        border-bottom: 1px solid #94a3b8;
+        top: -10px; right: -2px; width: 55%; height: 20px;
         border-radius: 40% 60% 20% 30% / 80% 100% 20% 40%;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.2), inset 0 2px 4px rgba(255,255,255,0.8);
-        z-index: 21;
-        pointer-events: none;
+        z-index: 11;
       }
       /* 针对按钮的微调 */
       button.snow-capped::before { top: -8px; height: 14px; }
@@ -277,10 +262,32 @@
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 relative z-10">
       
       <div class="lg:col-span-5 flex flex-col justify-center items-center p-6 rounded-3xl transition-all duration-500">
-        <div class="timer-display text-6xl sm:text-8xl font-mono font-bold text-primary mb-8 tracking-wider transition-all duration-700">
+        
+        <!-- 计时模式切换 -->
+        <div class="flex justify-center gap-2 mb-6 relative z-20 bg-gray-100/50 p-1 rounded-full backdrop-blur-sm hide-on-focus transition-all duration-500">
+            <button onclick="switchTimerMode('up')" id="modeUpBtn" class="px-6 py-2 rounded-full text-sm font-bold transition-all shadow-sm bg-white text-primary">正计时</button>
+            <button onclick="switchTimerMode('down')" id="modeDownBtn" class="px-6 py-2 rounded-full text-sm font-bold transition-all text-gray-500 hover:bg-white/50">倒计时</button>
+        </div>
+
+        <div class="timer-display text-6xl sm:text-8xl font-mono font-bold text-primary mb-4 tracking-wider transition-all duration-700">
           00:00:00
         </div>
+
+        <!-- 倒计时设置输入框 -->
+        <div id="countdownInputWrapper" class="hidden mb-6 flex items-center justify-center gap-3 hide-on-focus transition-all duration-500">
+            <span class="text-gray-500 font-medium">专注时长</span>
+            <input type="number" id="countdownMinutes" value="25" min="1" max="180" onchange="updateCountdownDisplay()" class="w-20 text-center p-2 rounded-xl border-2 border-gray-200 focus:border-primary outline-none font-bold text-xl text-primary bg-white/80">
+            <span class="text-gray-500 font-medium">分钟</span>
+        </div>
         
+        <!-- 自定义鼓励语输入 -->
+        <div class="mb-8 w-full max-w-md relative group hide-on-focus transition-all duration-500">
+             <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <i class="fa fa-pencil text-gray-400"></i>
+            </div>
+            <input type="text" id="customQuoteInput" placeholder="✨ 在这里写一句鼓励自己的话..." class="w-full pl-10 pr-4 py-3 rounded-2xl border-2 border-white/50 bg-white/60 backdrop-blur-sm focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/10 outline-none transition-all text-gray-700 placeholder-gray-400 font-medium shadow-sm hover:shadow-md">
+        </div>
+
         <div class="flex gap-4 scale-105">
           <button id="startBtn" onclick="startTimer()" class="group flex items-center gap-2 bg-primary hover:bg-primary-dark text-white px-8 py-3 rounded-full text-lg font-semibold transition-all shadow-md hover:shadow-lg active:scale-95">
             <i class="fa fa-play text-sm group-hover:animate-pulse"></i> 开始专注
@@ -293,9 +300,16 @@
           </button>
         </div>
         <p id="timerStatus" class="mt-6 text-gray-500 text-sm font-medium opacity-0 transition-opacity">准备进入心流状态...</p>
+        
+        <!-- 专注模式下的鼓励语轮播 -->
+        <div id="focusQuotes" class="hidden mt-12 text-center max-w-2xl h-24 flex items-center justify-center px-4">
+            <p class="text-xl sm:text-2xl font-sans font-semibold text-white tracking-wide transition-opacity duration-500" id="quoteText" style="text-shadow: 0 2px 4px rgba(0,0,0,0.3);">
+                保持专注，你就是最棒的！
+            </p>
+        </div>
       </div>
 
-      <div class="lg:col-span-7 bg-white/50 rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-sm transition-all duration-500 hide-on-focus">
+      <div class="lg:col-span-7 bg-white/50 rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-sm transition-all duration-500">
         <h3 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
           <span class="mr-2 text-2xl">📝</span> 今日计划清单
         </h3>
@@ -445,17 +459,107 @@
         { icon: '✨', title: '闪闪发光', msg: '超级棒！刚才专注的你，整个人都在发光诶！' }
     ];
 
+    // 专注模式轮播语录 (更适合大学生的哲理与动力)
+    const focusQuotes = [
+        "博学之，审问之，慎思之，明辨之，笃行之。",
+        "未经审视的人生是不值得过的。",
+        "种一棵树最好的时间是十年前，其次是现在。",
+        "流水不争先，争的是滔滔不绝。",
+        "你的职责是平整土地，而非焦虑时光。在三四月做的事，八九月自有答案。",
+        "Stay hungry, stay foolish.",
+        "凡是过往，皆为序章。",
+        "我们终此一生，就是要摆脱他人的期待，找到真正的自己。",
+        "Education is the kindling of a flame, not the filling of a vessel.",
+        "知之者不如好之者，好之者不如乐之者。",
+        "星光不问赶路人，时光不负有心人。"
+    ];
+
+    // 专注模式轮播语录 (已弃用)
+    const unusedQuotes = [
+        "乾坤未定，你我皆是黑马 🐎",
+        "将来的你，一定会感谢现在拼命的自己 �",
+        "不要假装努力，结果不会陪你演戏 🚫",
+        "成功的路上并不拥挤，因为坚持的人不多 �️",
+        "耐得住寂寞，才守得住繁华 🌺",
+        "你的潜力远超你的想象 🚀",
+        "既然选择了远方，便只顾风雨兼程 🌈",
+        "自律即自由 🕊️",
+        "Focus on the goal, not the obstacle. �",
+        "星光不问赶路人，时光不负有心人 🌟"
+    ];
+    let quoteInterval;
+
+    function startQuoteCarousel() {
+        const quoteContainer = document.getElementById('focusQuotes');
+        const quoteText = document.getElementById('quoteText');
+        quoteContainer.classList.remove('hidden');
+        
+        const customQuote = localStorage.getItem('timer_custom_quote');
+
+        if (customQuote) {
+            quoteText.textContent = customQuote;
+            quoteText.style.opacity = 1;
+            if (quoteInterval) clearInterval(quoteInterval);
+        } else {
+            // 立即显示第一条
+            quoteText.textContent = focusQuotes[Math.floor(Math.random() * focusQuotes.length)];
+            quoteText.style.opacity = 1;
+            
+            quoteInterval = setInterval(() => {
+                // 淡出
+                quoteText.style.opacity = 0;
+                setTimeout(() => {
+                    // 切换文字并淡入
+                    quoteText.textContent = focusQuotes[Math.floor(Math.random() * focusQuotes.length)];
+                    quoteText.style.opacity = 1;
+                }, 500); // 等待淡出动画完成
+            }, 5000); // 每5秒切换一次
+        }
+    }
+
+    function stopQuoteCarousel() {
+        const quoteContainer = document.getElementById('focusQuotes');
+        quoteContainer.classList.add('hidden');
+        if (quoteInterval) clearInterval(quoteInterval);
+    }
+
     // ===========================
-    // 计时器逻辑 (优化版：支持后台运行)
+    // 计时器逻辑 (优化版：支持正计时/倒计时)
     // ===========================
+    let timerMode = 'up'; // 'up' or 'down'
+    let countdownDuration = 25 * 60 * 1000; // default 25 mins
+
     function timeToString(time) {
-      let diffInHrs = time / 3600000;
-      let hh = Math.floor(diffInHrs);
-      let diffInMin = (diffInHrs - hh) * 60;
-      let mm = Math.floor(diffInMin);
-      let diffInSec = (diffInMin - mm) * 60;
-      let ss = Math.floor(diffInSec);
-      return `${hh.toString().padStart(2, "0")}:${mm.toString().padStart(2, "0")}:${ss.toString().padStart(2, "0")}`;
+      if (time < 0) time = 0;
+      return new Date(time).toISOString().substr(11, 8);
+    }
+
+    function switchTimerMode(mode) {
+        if (isStudying) return; // 计时中不可切换
+        timerMode = mode;
+        
+        const upBtn = document.getElementById('modeUpBtn');
+        const downBtn = document.getElementById('modeDownBtn');
+        const inputWrapper = document.getElementById('countdownInputWrapper');
+        
+        if (mode === 'up') {
+            upBtn.className = 'px-6 py-2 rounded-full text-sm font-bold transition-all shadow-sm bg-white text-primary';
+            downBtn.className = 'px-6 py-2 rounded-full text-sm font-bold transition-all text-gray-500 hover:bg-white/50';
+            inputWrapper.classList.add('hidden');
+            document.querySelector(".timer-display").innerHTML = "00:00:00";
+        } else {
+            downBtn.className = 'px-6 py-2 rounded-full text-sm font-bold transition-all shadow-sm bg-white text-primary';
+            upBtn.className = 'px-6 py-2 rounded-full text-sm font-bold transition-all text-gray-500 hover:bg-white/50';
+            inputWrapper.classList.remove('hidden');
+            updateCountdownDisplay();
+        }
+    }
+
+    function updateCountdownDisplay() {
+        if (timerMode !== 'down' || isStudying) return;
+        const mins = parseInt(document.getElementById('countdownMinutes').value) || 25;
+        countdownDuration = mins * 60 * 1000;
+        document.querySelector(".timer-display").innerHTML = timeToString(countdownDuration);
     }
 
     function tick() {
@@ -463,8 +567,26 @@
         const start = parseInt(localStorage.getItem('timer_start_timestamp') || now);
         const accumulated = parseInt(localStorage.getItem('timer_accumulated_before_start') || 0);
         
-        elapsedTime = (now - start) + accumulated;
-        document.querySelector(".timer-display").innerHTML = timeToString(elapsedTime);
+        if (timerMode === 'up') {
+            elapsedTime = (now - start) + accumulated;
+            document.querySelector(".timer-display").innerHTML = timeToString(elapsedTime);
+        } else {
+            // 倒计时逻辑
+            const totalDuration = parseInt(localStorage.getItem('timer_countdown_total_duration') || countdownDuration);
+            // 已经过去的时间 = (当前 - 开始) + 之前积累的
+            const elapsedSinceStart = (now - start) + accumulated;
+            const remaining = totalDuration - elapsedSinceStart;
+            
+            elapsedTime = elapsedSinceStart; // 记录已专注时间用于统计
+            
+            if (remaining <= 0) {
+                // 倒计时结束
+                document.querySelector(".timer-display").innerHTML = "00:00:00";
+                stopTimerWithRewardCheck(true); // true indicates auto-finish
+            } else {
+                document.querySelector(".timer-display").innerHTML = timeToString(remaining);
+            }
+        }
     }
 
     function setFocusMode(enable) {
@@ -474,10 +596,12 @@
         const startBtn = document.getElementById("startBtn");
         const pauseBtn = document.getElementById("pauseBtn");
         const resetBtn = document.getElementById("resetBtn");
+        const modeSwitcher = document.querySelector("#modeUpBtn").parentElement; // 获取切换器容器
+        const inputWrapper = document.getElementById("countdownInputWrapper");
 
         if (enable) {
             body.classList.add("focus-mode");
-            statusText.textContent = "正在心流模式中，保持专注...";
+            statusText.textContent = timerMode === 'up' ? "正在心流模式中，保持专注..." : "倒计时中，全神贯注...";
             statusText.style.opacity = 1;
             startBtn.classList.add("hidden", "flex");
             startBtn.classList.remove("flex"); // 确保移除 flex
@@ -487,6 +611,12 @@
             pauseBtn.classList.add("flex");
             resetBtn.classList.remove("hidden");
             resetBtn.classList.add("flex");
+            
+            // 隐藏设置控件
+            modeSwitcher.classList.add('opacity-0', 'pointer-events-none');
+            inputWrapper.classList.add('opacity-0', 'pointer-events-none');
+            
+            startQuoteCarousel();
         } else {
             body.classList.remove("focus-mode");
             statusText.style.opacity = 0;
@@ -497,17 +627,40 @@
             pauseBtn.classList.remove("flex");
             resetBtn.classList.add("hidden");
             resetBtn.classList.remove("flex");
+            
+            // 恢复设置控件
+            modeSwitcher.classList.remove('opacity-0', 'pointer-events-none');
+            inputWrapper.classList.remove('opacity-0', 'pointer-events-none');
+            
+            stopQuoteCarousel();
         }
     }
 
     function startTimer() {
         if (isStudying) return;
         
+        // 保存自定义鼓励语
+        const customQuote = document.getElementById('customQuoteInput').value.trim();
+        localStorage.setItem('timer_custom_quote', customQuote);
+
         // 记录开始时间戳到本地存储，实现后台计时
         const now = Date.now();
         localStorage.setItem('timer_start_timestamp', now);
-        localStorage.setItem('timer_accumulated_before_start', elapsedTime);
         localStorage.setItem('timer_is_running', 'true');
+        localStorage.setItem('timer_mode', timerMode);
+        
+        // 无论是正计时还是倒计时，accumulated 都代表“已经过去的时间”
+        localStorage.setItem('timer_accumulated_before_start', elapsedTime);
+
+        if (timerMode === 'down') {
+            // 如果是倒计时，且是新开始（elapsedTime为0），保存总时长
+            // 如果是从暂停恢复，elapsedTime > 0，不需要重新保存总时长，沿用旧的
+            if (elapsedTime === 0 || !localStorage.getItem('timer_countdown_total_duration')) {
+                 const mins = parseInt(document.getElementById('countdownMinutes').value) || 25;
+                 countdownDuration = mins * 60 * 1000;
+                 localStorage.setItem('timer_countdown_total_duration', countdownDuration);
+            }
+        }
 
         isStudying = true;
         tick(); // 立即更新一次
@@ -519,6 +672,12 @@
         clearInterval(timerInterval);
         isStudying = false;
         
+        // 恢复输入框内容
+        const savedQuote = localStorage.getItem('timer_custom_quote');
+        if (savedQuote) {
+            document.getElementById('customQuoteInput').value = savedQuote;
+        }
+
         // 清除运行状态，但保留 elapsedTime
         localStorage.removeItem('timer_is_running');
         // 此时 elapsedTime 已经在 tick() 中更新到了最新
@@ -529,17 +688,22 @@
     }
 
     // 停止计时并检查是否触发奖励
-    function stopTimerWithRewardCheck() {
+    function stopTimerWithRewardCheck(autoFinish = false) {
         clearInterval(timerInterval);
         
-        // 强制更新一次时间，确保准确
-        tick();
+        if (!autoFinish) tick(); // 如果不是自动结束，更新最后一次时间
+        
         const finalTime = elapsedTime;
         
         // 清理所有计时器相关的本地存储
         localStorage.removeItem('timer_start_timestamp');
         localStorage.removeItem('timer_accumulated_before_start');
         localStorage.removeItem('timer_is_running');
+        localStorage.removeItem('timer_custom_quote'); // 清除自定义语录
+        localStorage.removeItem('timer_countdown_total_duration');
+        localStorage.removeItem('timer_mode');
+        
+        document.getElementById('customQuoteInput').value = ''; // 清空输入框
 
         // 计算专注时长（分钟）和积分
         const minutes = Math.floor(finalTime / 60000);
@@ -552,11 +716,19 @@
         // 重置计时器状态
         document.querySelector(".timer-display").innerHTML = "00:00:00";
         elapsedTime = 0;
+        
+        if (timerMode === 'down') {
+             updateCountdownDisplay();
+        }
+        
         setFocusMode(false);
 
         // 检查是否达到获得奖励的条件
-        if (finalTime > MIN_FOCUS_TIME_FOR_REWARD) {
+        if (autoFinish || finalTime > MIN_FOCUS_TIME_FOR_REWARD) {
             showRewardModal();
+            if (autoFinish) {
+                alert("专注目标达成！休息一下吧 🎉");
+            }
         }
     }
 
@@ -629,21 +801,17 @@
     // 数据持久化与状态管理
     // ===========================
     const STORAGE_KEY = 'study_space_data';
-    let appData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {
-        points: 0,
-        todayStudyTime: 0, // minutes
-        lastStudyDate: new Date().toDateString(),
-        dailyLogs: {}, // format: "YYYY-MM-DD": { mood: 'happy', note: '...' }
-        todos: [] // format: { id: 1, text: '...', completed: false }
+    const defaultData = {
+        points: 0, todayStudyTime: 0, lastStudyDate: new Date().toDateString(),
+        dailyLogs: {}, todos: []
     };
-
-    // 兼容旧数据：确保 dailyLogs 和 todos 存在
-    if (!appData.dailyLogs) {
-        appData.dailyLogs = {};
-    }
-    if (!appData.todos) {
-        appData.todos = [];
-    }
+    
+    // 合并默认数据和存储数据
+    let appData = { ...defaultData, ...JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}') };
+    
+    // 确保引用类型字段存在 (防止旧数据覆盖默认值导致 undefined)
+    appData.dailyLogs = appData.dailyLogs || {};
+    appData.todos = appData.todos || [];
 
     // 检查是否跨天，重置今日数据
     if (appData.lastStudyDate !== new Date().toDateString()) {
@@ -666,16 +834,33 @@
     // ===========================
     // 计划清单逻辑
     // ===========================
+    // 安全工具：转义 HTML 字符，防止 XSS 攻击
+    function escapeHtml(text) {
+        const map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        };
+        return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+    }
+
     function renderTodos() {
         const list = document.getElementById('todoList');
+        // 检查是否开启了积雪特效 (由 HolidayManager 设置)
+        const snowClass = window.isSnowEnabled ? 'snow-capped' : '';
+        
+        // 检查是否有已完成的任务，决定是否显示清理按钮（这里可以扩展 UI，暂时保持简洁）
+        
         list.innerHTML = appData.todos.map(todo => `
-            <li class="todo-item flex items-center gap-3 p-3 bg-white/60 rounded-xl border border-gray-100 shadow-sm transition-all hover:shadow-md group ${todo.completed ? 'opacity-60' : ''}">
-                <button onclick="toggleTodo(${todo.id})" class="w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${todo.completed ? 'bg-primary border-primary text-white' : 'border-gray-300 hover:border-primary'}">
+            <li class="todo-item flex items-center gap-3 p-3 bg-white/60 rounded-xl border border-gray-100 shadow-sm transition-all hover:shadow-md group ${todo.completed ? 'opacity-60' : ''} ${snowClass}">
+                <button onclick="toggleTodo(${todo.id})" class="w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors relative z-30 ${todo.completed ? 'bg-primary border-primary text-white' : 'border-gray-300 hover:border-primary'}">
                     ${todo.completed ? '<i class="fa fa-check text-xs"></i>' : ''}
                 </button>
-                <span class="flex-1 font-medium ${todo.completed ? 'line-through text-gray-400' : 'text-gray-700'}">${todo.text}</span>
-                <button onclick="deleteTodo(${todo.id})" class="text-gray-300 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all px-2">
-                    <i class="fa fa-trash"></i>
+                <span class="flex-1 font-medium ${todo.completed ? 'line-through text-gray-400' : 'text-gray-700'} relative z-30">${escapeHtml(todo.text)}</span>
+                <button type="button" onclick="removeTodoItem('${todo.id}')" class="text-gray-400 hover:text-red-500 transition-colors px-2 p-2 rounded-lg hover:bg-red-50 relative z-50 cursor-pointer">
+                    <i class="fa fa-trash pointer-events-none"></i>
                 </button>
             </li>
         `).join('');
@@ -714,12 +899,21 @@
         }
     }
 
-    function deleteTodo(id) {
-        if(confirm('确定要删除这个任务吗？')) {
-            appData.todos = appData.todos.filter(t => t.id !== id);
-            saveData();
-            renderTodos();
+    function removeTodoItem(id) {
+        // 统一使用 window.event 处理冒泡，与 redeemItem 保持一致
+        if (window.event) {
+            window.event.stopPropagation();
         }
+        
+        // 延时处理，确保 UI 响应
+        setTimeout(() => {
+            if(confirm('确定要删除这个任务吗？')) {
+                // 统一转换为字符串比较，简化逻辑，同时兼容数字和字符串ID
+                appData.todos = appData.todos.filter(t => String(t.id) !== String(id));
+                saveData();
+                renderTodos();
+            }
+        }, 10);
     }
 
     // 绑定表单提交事件
@@ -727,7 +921,7 @@
 
     // 初始化显示
     updateDashboard();
-    renderTodos();
+    // renderTodos(); // 移到 HolidayManager 之后调用，确保积雪效果正确应用
 
     // ===========================
     // 积分商城逻辑
@@ -757,27 +951,56 @@
 
     function renderShopItems() {
         const container = document.getElementById('shopItems');
-        container.innerHTML = shopItems.map(item => `
-            <div class="bg-white border border-gray-100 rounded-xl p-4 flex flex-col items-center hover:shadow-md transition-all group">
+        // 强制转换为数字，确保比较逻辑正确
+        const currentPoints = Number(appData.points) || 0;
+        
+        container.innerHTML = shopItems.map(item => {
+            const canAfford = currentPoints >= item.cost;
+            // 动态生成样式和点击事件
+            const btnClass = canAfford 
+                ? 'bg-primary text-white hover:bg-primary-dark shadow-md hover:shadow-lg active:scale-95 cursor-pointer' 
+                : 'bg-gray-100 text-gray-400 cursor-not-allowed';
+            
+            // 简化点击事件，移除 event 参数传递，改用 window.event
+            const clickAction = canAfford ? `redeemItem(${item.id})` : "alert('积分不足，继续加油专注吧！💪')";
+
+            return `
+            <div class="bg-white border border-gray-100 rounded-xl p-4 flex flex-col items-center hover:shadow-md transition-all group relative">
                 <div class="text-4xl mb-2 group-hover:scale-110 transition-transform">${item.icon}</div>
                 <h3 class="font-bold text-gray-800 mb-1">${item.name}</h3>
                 <div class="text-secondary font-bold mb-3">${item.cost} 积分</div>
-                <button onclick="redeemItem(${item.id})" class="w-full py-2 rounded-lg text-sm font-bold transition-colors ${appData.points >= item.cost ? 'bg-primary text-white hover:bg-primary-dark' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}">
-                    兑换
+                <button type="button" onclick="${clickAction}" class="w-full py-2 rounded-lg text-sm font-bold transition-all duration-200 relative z-50 ${btnClass}">
+                    <span class="pointer-events-none">兑换</span>
                 </button>
             </div>
-        `).join('');
+        `}).join('');
     }
 
     function redeemItem(id) {
+        // 尝试阻止冒泡，防止误触
+        if (window.event) {
+            window.event.stopPropagation();
+        }
+
         const item = shopItems.find(i => i.id === id);
-        if (appData.points >= item.cost) {
-            if(confirm(`确定要消耗 ${item.cost} 积分兑换 "${item.name}" 吗？`)) {
-                appData.points -= item.cost;
-                saveData();
-                renderShopItems(); // 重新渲染以更新按钮状态
-                alert(`兑换成功！快去享受你的 ${item.name} 吧！🎉`);
-            }
+        if (!item) {
+            alert('商品数据异常，请刷新页面重试');
+            return;
+        }
+
+        const currentPoints = Number(appData.points) || 0;
+        
+        if (currentPoints >= item.cost) {
+            // 延时一点点弹出 confirm，防止点击事件冲突
+            setTimeout(() => {
+                if(confirm(`确定要消耗 ${item.cost} 积分兑换 "${item.name}" 吗？`)) {
+                    appData.points = currentPoints - item.cost;
+                    saveData();
+                    updateDashboard(); // 立即更新顶部积分显示
+                    renderShopItems(); // 更新按钮状态
+                    alert(`兑换成功！快去享受你的 ${item.name} 吧！🎉`);
+                }
+            }, 10);
         } else {
             alert('积分不足，继续加油专注吧！💪');
         }
@@ -1028,6 +1251,7 @@
 
             // 5. 积雪效果 (如果开启)
             if (theme.snowCapped) {
+                window.isSnowEnabled = true; // 设置全局标志，供 renderTodos 使用
                 // 给主要卡片和按钮添加积雪
                 // 注意：需要确保这些元素有 relative 定位，或者 snow-capped 类已经处理了
                 const elementsToCap = document.querySelectorAll('#startBtn, .bg-white, .bg-white\\/90, .bg-white\\/80, .bg-white\\/60, .bg-white\\/50');
@@ -1079,6 +1303,7 @@
 
     // 初始化调用
     HolidayManager.check();
+    renderTodos(); // 确保在主题应用后渲染列表
   </script>
 
   <style>
