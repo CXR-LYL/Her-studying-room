@@ -4,6 +4,17 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>璐璐的自习室</title>
+  
+  <!-- 微信/社交分享预览优化 -->
+  <meta property="og:title" content="璐璐的自习室 📚">
+  <meta property="og:description" content="保持专注，遇见更好的自己。支持倒计时/正计时，沉浸式学习体验。">
+  <meta property="og:image" content="https://cdn-icons-png.flaticon.com/512/2921/2921226.png">
+  <meta property="og:type" content="website">
+  <!-- 针对部分安卓/微信的兼容标签 -->
+  <meta itemprop="name" content="璐璐的自习室 📚">
+  <meta itemprop="description" content="保持专注，遇见更好的自己。支持倒计时/正计时，沉浸式学习体验。">
+  <meta itemprop="image" content="https://cdn-icons-png.flaticon.com/512/2921/2921226.png">
+
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:ital,wght@0,500;1,400&display=swap" rel="stylesheet">
@@ -228,6 +239,11 @@
 </head>
 
 <body class="bg-grid-pattern min-h-screen font-sans transition-all duration-700 ease-in-out overflow-x-hidden flex items-center justify-center p-4 sm:p-8">
+  
+  <!-- 微信分享抓图 Hack (隐藏图片，确保微信转发时能抓取到封面) -->
+  <div style="display:none; opacity: 0; pointer-events: none; position: absolute; top: 0; left: 0; z-index: -1;">
+    <img src="https://cdn-icons-png.flaticon.com/512/2921/2921226.png" alt="logo">
+  </div>
 
   <main class="main-card max-w-5xl w-full mx-auto bg-white/80 backdrop-blur-xl rounded-[2rem] shadow-soft-xl p-6 sm:p-10 border border-white/40 transition-all duration-700 relative overflow-hidden">
     
