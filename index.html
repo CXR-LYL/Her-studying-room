@@ -274,10 +274,19 @@
         </div>
 
         <!-- 倒计时设置输入框 -->
-        <div id="countdownInputWrapper" class="hidden mb-6 flex items-center justify-center gap-3 hide-on-focus transition-all duration-500">
+        <div id="countdownInputWrapper" class="hidden mb-4 flex items-center justify-center gap-3 hide-on-focus transition-all duration-500">
             <span class="text-gray-500 font-medium">专注时长</span>
             <input type="number" id="countdownMinutes" value="25" min="1" max="180" onchange="updateCountdownDisplay()" class="w-20 text-center p-2 rounded-xl border-2 border-gray-200 focus:border-primary outline-none font-bold text-xl text-primary bg-white/80">
             <span class="text-gray-500 font-medium">分钟</span>
+        </div>
+
+        <!-- 锁屏/通知栏显示开关 (通用黑科技) -->
+        <div class="mb-6 flex items-center justify-center gap-2 hide-on-focus transition-all duration-500">
+            <label class="flex items-center cursor-pointer relative group select-none">
+                <input type="checkbox" id="bgModeToggle" class="sr-only peer">
+                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                <span class="ml-3 text-sm font-medium text-gray-600 group-hover:text-primary transition-colors">锁屏/通知栏显示时间 <span class="text-xs text-gray-400 block sm:inline">(防息屏中断)</span></span>
+            </label>
         </div>
         
         <!-- 自定义鼓励语输入 -->
@@ -524,10 +533,32 @@
     }
 
     // ===========================
-    // 计时器逻辑 (优化版：支持正计时/倒计时)
+    // 计时器逻辑 (优化版：支持正计时/倒计时 + 媒体中心显示)
     // ===========================
     let timerMode = 'up'; // 'up' or 'down'
     let countdownDuration = 25 * 60 * 1000; // default 25 mins
+    
+    // 无声音频，用于保持后台活跃并激活媒体中心
+    const silentAudio = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA');
+    silentAudio.loop = true;
+
+    function updateMediaSession(timeStr, status) {
+        if (!('mediaSession' in navigator)) return;
+        
+        const title = status === 'paused' ? '⏸️ 已暂停' : (timerMode === 'up' ? '🔥 专注中' : '⏳ 倒计时');
+        
+        navigator.mediaSession.metadata = new MediaMetadata({
+            title: title,
+            artist: timeStr,
+            album: '璐璐的自习室',
+            artwork: [
+                { src: 'https://cdn-icons-png.flaticon.com/512/2921/2921226.png', sizes: '512x512', type: 'image/png' }
+            ]
+        });
+
+        // 尝试更新播放状态
+        navigator.mediaSession.playbackState = status === 'paused' ? 'paused' : 'playing';
+    }
 
     function timeToString(time) {
       if (time < 0) time = 0;
@@ -567,9 +598,12 @@
         const start = parseInt(localStorage.getItem('timer_start_timestamp') || now);
         const accumulated = parseInt(localStorage.getItem('timer_accumulated_before_start') || 0);
         
+        let displayTimeStr = "00:00:00";
+
         if (timerMode === 'up') {
             elapsedTime = (now - start) + accumulated;
-            document.querySelector(".timer-display").innerHTML = timeToString(elapsedTime);
+            displayTimeStr = timeToString(elapsedTime);
+            document.querySelector(".timer-display").innerHTML = displayTimeStr;
         } else {
             // 倒计时逻辑
             const totalDuration = parseInt(localStorage.getItem('timer_countdown_total_duration') || countdownDuration);
@@ -582,10 +616,21 @@
             if (remaining <= 0) {
                 // 倒计时结束
                 document.querySelector(".timer-display").innerHTML = "00:00:00";
+                document.title = "时间到！🎉 - 璐璐的自习室";
                 stopTimerWithRewardCheck(true); // true indicates auto-finish
+                return;
             } else {
-                document.querySelector(".timer-display").innerHTML = timeToString(remaining);
+                displayTimeStr = timeToString(remaining);
+                document.querySelector(".timer-display").innerHTML = displayTimeStr;
             }
+        }
+
+        // 优化：更新网页标题，方便在其他标签页时也能看到时间
+        document.title = `${displayTimeStr} ${timerMode === 'up' ? '💪' : '⏳'} - 璐璐的自习室`;
+        
+        // 优化：更新系统媒体中心（锁屏/通知栏）
+        if (isStudying && document.getElementById('bgModeToggle').checked) {
+            updateMediaSession(displayTimeStr, 'playing');
         }
     }
 
@@ -598,6 +643,7 @@
         const resetBtn = document.getElementById("resetBtn");
         const modeSwitcher = document.querySelector("#modeUpBtn").parentElement; // 获取切换器容器
         const inputWrapper = document.getElementById("countdownInputWrapper");
+        const bgToggle = document.getElementById("bgModeToggle").parentElement.parentElement; // 获取开关容器
 
         if (enable) {
             body.classList.add("focus-mode");
@@ -615,6 +661,7 @@
             // 隐藏设置控件
             modeSwitcher.classList.add('opacity-0', 'pointer-events-none');
             inputWrapper.classList.add('opacity-0', 'pointer-events-none');
+            bgToggle.classList.add('opacity-0', 'pointer-events-none'); // 隐藏开关
             
             startQuoteCarousel();
         } else {
@@ -628,9 +675,20 @@
             resetBtn.classList.add("hidden");
             resetBtn.classList.remove("flex");
             
+            // 优化：智能按钮文本与标题状态
+            if (elapsedTime > 0) {
+                 startBtn.innerHTML = '<i class="fa fa-play text-sm group-hover:animate-pulse"></i> 继续专注';
+                 document.title = "⏸️ 已暂停 - 璐璐的自习室";
+                 updateMediaSession(timeToString(elapsedTime), 'paused');
+            } else {
+                 startBtn.innerHTML = '<i class="fa fa-play text-sm group-hover:animate-pulse"></i> 开始专注';
+                 document.title = "璐璐的自习室";
+            }
+
             // 恢复设置控件
             modeSwitcher.classList.remove('opacity-0', 'pointer-events-none');
             inputWrapper.classList.remove('opacity-0', 'pointer-events-none');
+            bgToggle.classList.remove('opacity-0', 'pointer-events-none');
             
             stopQuoteCarousel();
         }
@@ -639,6 +697,18 @@
     function startTimer() {
         if (isStudying) return;
         
+        // 请求通知权限，防止用户切出页面后错过提醒
+        if ("Notification" in window && Notification.permission !== "granted") {
+            Notification.requestPermission();
+        }
+
+        // 检查是否开启后台模式
+        if (document.getElementById('bgModeToggle').checked) {
+            silentAudio.play().catch(e => console.log("Audio play failed:", e));
+            // 初始化媒体中心
+            updateMediaSession("00:00:00", 'playing');
+        }
+
         // 保存自定义鼓励语
         const customQuote = document.getElementById('customQuoteInput').value.trim();
         localStorage.setItem('timer_custom_quote', customQuote);
@@ -672,6 +742,10 @@
         clearInterval(timerInterval);
         isStudying = false;
         
+        // 暂停音频
+        silentAudio.pause();
+        updateMediaSession(timeToString(elapsedTime), 'paused');
+
         // 恢复输入框内容
         const savedQuote = localStorage.getItem('timer_custom_quote');
         if (savedQuote) {
@@ -691,6 +765,13 @@
     function stopTimerWithRewardCheck(autoFinish = false) {
         clearInterval(timerInterval);
         
+        // 停止音频
+        silentAudio.pause();
+        silentAudio.currentTime = 0;
+        if ('mediaSession' in navigator) {
+            navigator.mediaSession.playbackState = 'none';
+        }
+
         if (!autoFinish) tick(); // 如果不是自动结束，更新最后一次时间
         
         const finalTime = elapsedTime;
@@ -727,6 +808,13 @@
         if (autoFinish || finalTime > MIN_FOCUS_TIME_FOR_REWARD) {
             showRewardModal();
             if (autoFinish) {
+                // 发送桌面通知
+                if ("Notification" in window && Notification.permission === "granted") {
+                    new Notification("专注目标达成！🎉", {
+                        body: "你真棒！已经完成了设定的专注时长，快起来活动一下吧！",
+                        icon: "https://cdn-icons-png.flaticon.com/512/2921/2921226.png" // 简单的图标
+                    });
+                }
                 alert("专注目标达成！休息一下吧 🎉");
             }
         }
